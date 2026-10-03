@@ -1,0 +1,79 @@
+syntax = "proto3";
+package taskqueue.v1;
+option go_package = "github.com/yourname/distributed-task-queue/gen/taskqueue/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service TaskService {
+  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
+  rpc GetTask(GetTaskRequest) returns (Task);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  rpc RetryTask(RetryTaskRequest) returns (google.protobuf.Empty);
+}
+
+service WorkerService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc FetchTask(FetchTaskRequest) returns (FetchTaskResponse);
+  rpc ReportResult(ReportResultRequest) returns (google.protobuf.Empty);
+  rpc Heartbeat(HeartbeatRequest) returns (google.protobuf.Empty);
+}
+
+message SubmitTaskRequest {
+  string task_type = 1;
+  bytes payload = 2;
+  int32 priority = 3;
+  int32 max_retries = 4;
+  google.protobuf.Timestamp scheduled_at = 5;
+}
+message SubmitTaskResponse { string task_id = 1; }
+
+message GetTaskRequest { string task_id = 1; }
+
+message Task {
+  string id = 1;
+  string task_type = 2;
+  bytes payload = 3;
+  string status = 4;
+  int32 priority = 5;
+  int32 retry_count = 6;
+  int32 max_retries = 7;
+  string error_message = 8;
+  string worker_id = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp completed_at = 11;
+}
+
+message ListTasksRequest {
+  string status = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+message ListTasksResponse { repeated Task tasks = 1; int32 total = 2; }
+
+message RetryTaskRequest { string task_id = 1; }
+
+message RegisterRequest {
+  string worker_id = 1;
+  repeated string capabilities = 2;
+}
+message RegisterResponse { bool accepted = 1; }
+
+message FetchTaskRequest {
+  string worker_id = 1;
+  repeated string capabilities = 2;
+  int32 wait_seconds = 3;
+}
+message FetchTaskResponse {
+  bool has_task = 1;
+  Task task = 2;
+}
+
+message ReportResultRequest {
+  string task_id = 1;
+  string worker_id = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+message HeartbeatRequest { string worker_id = 1; }
