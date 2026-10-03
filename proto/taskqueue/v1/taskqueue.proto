@@ -1,6 +1,6 @@
 syntax = "proto3";
 package taskqueue.v1;
-option go_package = "github.com/yourname/distributed-task-queue/gen/taskqueue/v1";
+option go_package = "github.com/daudalobogachiev925/distributed-task-queue/gen/taskqueue/v1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
