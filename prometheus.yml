@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: dtq
+    static_configs:
+      - targets: ["coordinator:9090"]
