@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Task Queue Dashboard</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 20px; background: #0d1117; color: #c9d1d9; }
+  h1 { color: #58a6ff; }
+  .filters { margin-bottom: 12px; }
+  button, select { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #30363d; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #30363d; font-size: 13px; }
+  th { background: #161b22; }
+  .status-pending { color: #d29922; }
+  .status-running { color: #58a6ff; }
+  .status-completed { color: #3fb950; }
+  .status-failed, .status-dead { color: #f85149; }
+  .status-retry { color: #db6d28; }
+  .stats { display: flex; gap: 20px; margin: 16px 0; }
+  .stat { background: #161b22; padding: 12px 20px; border-radius: 6px; border: 1px solid #30363d; }
+  .stat b { display: block; font-size: 22px; color: #58a6ff; }
+</style>
+</head>
+<body>
+  <h1>🎯 Distributed Task Queue</h1>
+
+  <div class="filters">
+    <select id="statusFilter">
+      <option value="">All</option>
+      <option value="pending">pending</option>
+      <option value="running">running</option>
+      <option value="retry">retry</option>
+      <option value="completed">completed</option>
+      <option value="failed">failed</option>
+      <option value="dead">dead</option>
+    </select>
+    <button onclick="load()">Refresh</button>
+    <a href="http://localhost:3000" target="_blank"><button>Grafana</button></a>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Type</th><th>Status</th><th>Priority</th>
+        <th>Retries</th><th>Worker</th><th>Error</th><th>Created</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+<script>
+async function load() {
+  const status = document.getElementById('statusFilter').value;
+  const r = await fetch('/api/tasks?status=' + status);
+  const data = await r.json();
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><b>${data.total}</b>Total</div>
+  `;
+
+  const rows = document.getElementById('rows');
+  rows.innerHTML = '';
+  for (const t of data.tasks || []) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family:monospace;font-size:11px">${t.id.slice(0,8)}…</td>
+      <td>${t.task_type}</td>
+      <td class="status-${t.status}">${t.status}</td>
+      <td>${t.priority}</td>
+      <td>${t.retry_count}/${t.max_retries}</td>
+      <td>${t.worker_id || '-'}</td>
+      <td style="color:#f85149;font-size:11px">${t.error_message || ''}</td>
+      <td style="font-size:11px">${t.created_at}</td>
+      <td><button onclick="retry('${t.id}')">Retry</button></td>
+    `;
+    rows.appendChild(tr);
+  }
+}
+
+async function retry(id) {
+  await fetch('/api/retry?id=' + id);
+  load();
+}
+
+document.getElementById('statusFilter').addEventListener('change', load);
+load();
+setInterval(load, 3000);
+</script>
+</body>
+</html>
