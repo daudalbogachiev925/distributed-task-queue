@@ -1,4 +1,4 @@
-module github.com/yourname/distributed-task-queue
+module github.com/daudalobogachiev925/distributed-task-queue
 
 go 1.22
 
